@@ -1,0 +1,11 @@
+# package directories
+node_modules
+jspm_packages
+
+# Serverless directories
+.serverless
+.env
+
+# files & directories to ignore
+it_should_run_first.txt
+.DS_Store
