@@ -41,7 +41,14 @@ provider:
           Resource: !GetAtt EventBus.Arn   
         - Effect: Allow
           Action: sns:Publish
-          Resource: !Ref RestaurantNotificationTopic  
+          Resource: !Ref RestaurantNotificationTopic
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: !GetAtt IdempotencyTable.Arn    
 
   environment:
     rest_api_url: !Sub https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${sls:stage}
@@ -116,7 +123,8 @@ functions:
               - order_placed
     environment:
       bus_name: !Ref EventBus
-      restaurant_notification_topic: !Ref RestaurantNotificationTopic      
+      restaurant_notification_topic: !Ref RestaurantNotificationTopic
+      idempotency_table: !Ref IdempotencyTable      
 
 resources:
   Conditions:
@@ -296,7 +304,21 @@ resources:
                     "detail": <detail>
                   },
                   "eventBusName": "${EventBus}"
-                }    
+                }  
+
+    IdempotencyTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        TimeToLiveSpecification:
+          Enabled: true
+          AttributeName: expiration              
 
   Outputs:
     RestaurantsTableName:
