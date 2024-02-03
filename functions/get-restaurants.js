@@ -4,6 +4,8 @@ const dynamodbClient = new DynamoDB()
 const dynamodb = DynamoDBDocumentClient.from(dynamodbClient)
 const middy = require('@middy/core')
 const ssm = require('@middy/ssm')
+const { Logger } = require('@aws-lambda-powertools/logger')
+const logger = new Logger({ serviceName: process.env.serviceName })
 
 const middyCacheEnabled = JSON.parse(process.env.middy_cache_enabled)
 const middyCacheExpiry = parseInt(process.env.middy_cache_expiry_milliseconds)
@@ -12,13 +14,20 @@ const { serviceName, ssmStage } = process.env
 const tableName = process.env.restaurants_table
 
 const getRestaurants = async (count) => {
-  console.log(`fetching ${count} restaurants from ${tableName}...`)
+  // console.log(`fetching ${count} restaurants from ${tableName}...`)
+  logger.debug('getting restaurants from DynamoDB...', {
+    count,
+    tableName
+  })
 
   const resp = await dynamodb.send(new ScanCommand({
     TableName: tableName,
     Limit: count,
   }))
-  console.log(`found ${resp.Items.length} restaurants`)
+  // console.log(`found ${resp.Items.length} restaurants`)
+  logger.debug('found restaurants', {
+    count: resp.Items.length
+  })
   return resp.Items
 }
 
